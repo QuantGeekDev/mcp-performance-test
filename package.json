@@ -1,5 +1,5 @@
 {
-  "name": "mcp-performance-tester",
+  "name": "mcp-performance-test",
   "version": "1.0.0",
   "description": "A TypeScript library for performance testing MCP (Model Context Protocol) servers with concurrent testing, load testing, and comprehensive metrics analysis.",
   "main": "dist/index.js",

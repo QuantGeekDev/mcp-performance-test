@@ -1,10 +1,11 @@
-import { MCP_URL } from "./constants.js";
-import TestRunner from "./TestRunner.js";
+export { default as TestRunner } from "./TestRunner.js";
+export { default as VirtualClient } from "./VirtualClient.js";
+export { default as PerformanceAnalyzer } from "./PerformanceAnalyzer.js";
 
-const testRunner = new TestRunner({ baseUrl: MCP_URL, responseMode: "sse" });
+export * from "./types.js";
 
-const burstResult = await testRunner.runConcurrentTest({
-  concurrency: 10,
-});
-
-const jsonResults = testRunner.exportResults(burstResult, "json");
+export {
+  createTestRunner,
+  createSseTestRunner,
+  createBatchTestRunner,
+} from "./factory.js";

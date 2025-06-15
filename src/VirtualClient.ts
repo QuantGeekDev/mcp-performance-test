@@ -1,14 +1,20 @@
 import axios, { AxiosInstance } from "axios";
-import chalk from "chalk";
 import { ResponseMode } from "./types.js";
+import { ConfigurableLogger, defaultLogger } from "./logger.js";
 
 class VirtualClient {
   public axios_instance: AxiosInstance;
   private message_id: number = 1;
   private responseMode: ResponseMode;
+  private logger: ConfigurableLogger;
 
-  constructor(baseUrl: string, responseMode: ResponseMode = "sse") {
+  constructor(
+    baseUrl: string,
+    responseMode: ResponseMode = "sse",
+    logger: ConfigurableLogger = defaultLogger
+  ) {
     this.responseMode = responseMode;
+    this.logger = logger;
 
     const headers = { Accept: "text/event-stream, application/json" };
 
@@ -26,11 +32,11 @@ class VirtualClient {
         : { Accept: "application/json" };
 
     this.axios_instance.defaults.headers.Accept = headers.Accept;
-    console.log(chalk.yellow(`Response mode set to: ${mode}`));
+    this.logger.info(`Response mode set to: ${mode}`);
   }
 
   async initialize() {
-    console.log(chalk.yellow(`Initializing...`));
+    this.logger.debug(`Initializing...`);
     const initializeMessage = {
       jsonrpc: "2.0",
       id: this.message_id++,
@@ -64,12 +70,8 @@ class VirtualClient {
       method: "notifications/initialize",
     };
     const response = await this.axios_instance.post("/mcp", acknowledgeMessage);
-    console.log(
-      chalk.green(
-        `Acknowledged initialize. |  mcp-session-id: ${chalk.blue(
-          ` ${this.axios_instance.defaults.headers.common["mcp-session-id"]}`
-        )}`
-      )
+    this.logger.debug(
+      `Acknowledged initialize. |  mcp-session-id: ${this.axios_instance.defaults.headers.common["mcp-session-id"]}`
     );
     return response.data;
   }
@@ -92,7 +94,7 @@ class VirtualClient {
       if (dataMatch) {
         jsonData = JSON.parse(dataMatch[1]);
       } else {
-        console.log(chalk.red(`Could not parse SSE tools response`));
+        this.logger.error(`Could not parse SSE tools response`);
         return response.data;
       }
     } else {
@@ -100,10 +102,7 @@ class VirtualClient {
     }
 
     const tools = jsonData.result?.tools || [];
-    console.log(
-      chalk.green(`Available tools (${this.responseMode} mode):`),
-      tools
-    );
+    this.logger.debug(`Available tools (${this.responseMode} mode):`, tools);
     return jsonData;
   }
 }

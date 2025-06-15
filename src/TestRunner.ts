@@ -1,4 +1,3 @@
-import chalk from "chalk";
 import {
   ResponseMode,
   TestRunnerConfig,
@@ -7,22 +6,33 @@ import {
 } from "./types.js";
 import VirtualClient from "./VirtualClient.js";
 import PerformanceAnalyzer, { OperationResult } from "./PerformanceAnalyzer.js";
+import { ConfigurableLogger } from "./logger.js";
 
 class TestRunner {
   private clients: VirtualClient[];
   private baseUrl: string;
   private responseMode: ResponseMode;
   private performanceAnalyzer: PerformanceAnalyzer;
+  private logger: ConfigurableLogger;
 
   constructor(config: TestRunnerConfig) {
     this.baseUrl = config.baseUrl;
     this.responseMode = config.responseMode;
     this.clients = [];
-    this.performanceAnalyzer = new PerformanceAnalyzer();
+
+    this.logger = new ConfigurableLogger(
+      config.logLevel || "info",
+      config.enableColorOutput !== false,
+      config.logger
+    );
+
+    this.performanceAnalyzer = new PerformanceAnalyzer(this.logger);
   }
 
   private async _addClient() {
-    this.clients.push(new VirtualClient(this.baseUrl, this.responseMode));
+    this.clients.push(
+      new VirtualClient(this.baseUrl, this.responseMode, this.logger)
+    );
   }
 
   public setClientsAmount(amount: number) {
@@ -30,11 +40,14 @@ class TestRunner {
     for (let index = 0; index < amount; index++) {
       this._addClient();
     }
-    console.log(chalk.yellow(`Total clients: ${this.clients.length}`));
+    this.logger.info(`Total clients: ${amount}`);
   }
 
   async runInitializationTest() {
     const virtualClient = this.clients[0];
+    if (!virtualClient) {
+      throw new Error("No clients available. Call setClientsAmount() first.");
+    }
     await virtualClient.initialize();
     await virtualClient.acknowledgeInitialize();
     await virtualClient.listTools();
@@ -90,14 +103,13 @@ class TestRunner {
   }
 
   async runConcurrentTest(config: ConcurrentTestConfig): Promise<TestResult> {
-    console.log(chalk.cyan.bold(`\n🚀 Starting Concurrent Test`));
-    console.log(chalk.yellow(`Concurrency: ${config.concurrency}`));
-    if (config.duration)
-      console.log(chalk.yellow(`Duration: ${config.duration}s`));
+    this.logger.info(`\n🚀 Starting Concurrent Test`);
+    this.logger.info(`Concurrency: ${config.concurrency}`);
+    if (config.duration) this.logger.info(`Duration: ${config.duration}s`);
     if (config.iterations)
-      console.log(chalk.yellow(`Iterations per client: ${config.iterations}`));
+      this.logger.info(`Iterations per client: ${config.iterations}`);
     if (config.rampUpTime)
-      console.log(chalk.yellow(`Ramp-up time: ${config.rampUpTime}s`));
+      this.logger.info(`Ramp-up time: ${config.rampUpTime}s`);
 
     if (this.clients.length < config.concurrency) {
       this.setClientsAmount(config.concurrency);
@@ -117,8 +129,8 @@ class TestRunner {
         .map((client) => this.executeClientWorkflow(client));
     }
 
-    console.log(
-      chalk.blue(`⏳ Executing ${config.concurrency} concurrent operations...`)
+    this.logger.info(
+      `⏳ Executing ${config.concurrency} concurrent operations...`
     );
     const allResults = await Promise.allSettled(clientPromises);
 
@@ -157,14 +169,17 @@ class TestRunner {
     const clientPromises: Promise<OperationResult[]>[] = [];
     const rampUpInterval = (config.rampUpTime! * 1000) / config.concurrency;
 
-    console.log(
-      chalk.blue(
-        `📈 Ramping up ${config.concurrency} clients over ${config.rampUpTime}s...`
-      )
+    this.logger.info(
+      `📈 Ramping up ${config.concurrency} clients over ${config.rampUpTime}s...`
     );
 
     for (let i = 0; i < config.concurrency; i++) {
       const client = this.clients[i];
+      if (!client) {
+        throw new Error(
+          `Client at index ${i} is undefined. Check client initialization.`
+        );
+      }
 
       if (i > 0) {
         await new Promise((resolve) => setTimeout(resolve, rampUpInterval));
@@ -173,9 +188,7 @@ class TestRunner {
       const clientPromise = this.executeClientWorkflow(client);
       clientPromises.push(clientPromise);
 
-      console.log(
-        chalk.gray(`  Client ${i + 1}/${config.concurrency} started`)
-      );
+      this.logger.info(`  Client ${i + 1}/${config.concurrency} started`);
     }
 
     return clientPromises;
@@ -186,9 +199,9 @@ class TestRunner {
       throw new Error("Duration must be specified for load tests");
     }
 
-    console.log(chalk.cyan.bold(`\n🔥 Starting Load Test`));
-    console.log(chalk.yellow(`Duration: ${config.duration}s`));
-    console.log(chalk.yellow(`Concurrency: ${config.concurrency}`));
+    this.logger.info(`\n🔥 Starting Load Test`);
+    this.logger.info(`Duration: ${config.duration}s`);
+    this.logger.info(`Concurrency: ${config.concurrency}`);
 
     if (this.clients.length < config.concurrency) {
       this.setClientsAmount(config.concurrency);
@@ -203,14 +216,17 @@ class TestRunner {
 
     for (let i = 0; i < config.concurrency; i++) {
       const client = this.clients[i];
+      if (!client) {
+        throw new Error(
+          `Client at index ${i} is undefined. Check client initialization.`
+        );
+      }
       const clientPromise = this.runClientForDuration(client, endTime);
       clientPromises.push(clientPromise);
     }
 
-    console.log(
-      chalk.blue(
-        `⏳ Running ${config.concurrency} clients for ${config.duration}s...`
-      )
+    this.logger.info(
+      `⏳ Running ${config.concurrency} clients for ${config.duration}s...`
     );
 
     await Promise.allSettled(clientPromises);

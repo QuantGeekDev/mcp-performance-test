@@ -1,26 +1,58 @@
 {
-  "name": "mcp-performance-tests",
+  "name": "mcp-performance-tester",
   "version": "1.0.0",
+  "description": "A TypeScript library for performance testing MCP (Model Context Protocol) servers with concurrent testing, load testing, and comprehensive metrics analysis.",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "type": "module",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node .",
-    "dev": "ts-node src/index.ts",
-    "build": "tsc"
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
   },
-  "keywords": [],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "prepare": "npm run build",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "performance-testing",
+    "load-testing",
+    "benchmarking",
+    "typescript",
+    "concurrent-testing",
+    "api-testing"
+  ],
   "author": "",
-  "license": "ISC",
-  "description": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/your-username/mcp-performance-tester.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-username/mcp-performance-tester/issues"
+  },
+  "homepage": "https://github.com/your-username/mcp-performance-tester#readme",
   "dependencies": {
     "axios": "^1.10.0",
     "chalk": "^5.4.1",
-    "simple-statistics": "^7.8.8"
+    "simple-statistics": "^7.8.8",
+    "tslib": "^2.8.1"
   },
   "devDependencies": {
     "@types/node": "^22.15.31",
-    "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
+  },
+  "engines": {
+    "node": ">=16.0.0"
   }
 }

@@ -1,6 +1,6 @@
 import * as ss from "simple-statistics";
-import chalk from "chalk";
 import { PerformanceMetrics, TestResult } from "./types.js";
+import { ConfigurableLogger, defaultLogger } from "./logger.js";
 
 export interface OperationResult {
   success: boolean;
@@ -11,6 +11,11 @@ export interface OperationResult {
 
 class PerformanceAnalyzer {
   private results: OperationResult[] = [];
+  private logger: ConfigurableLogger;
+
+  constructor(logger: ConfigurableLogger = defaultLogger) {
+    this.logger = logger;
+  }
 
   addResult(result: OperationResult) {
     this.results.push(result);
@@ -76,66 +81,43 @@ class PerformanceAnalyzer {
   generateReport(testResult: TestResult): void {
     const { metrics, config, testType } = testResult;
 
-    console.log("\n" + chalk.cyan("═".repeat(60)));
-    console.log(
-      chalk.cyan.bold(`📊 ${testType.toUpperCase()} PERFORMANCE REPORT`)
-    );
-    console.log(chalk.cyan("═".repeat(60)));
+    this.logger.info("\n" + "═".repeat(60));
+    this.logger.info(`📊 ${testType.toUpperCase()} PERFORMANCE REPORT`);
+    this.logger.info("═".repeat(60));
 
-    console.log(chalk.yellow.bold("\n🔧 Test Configuration:"));
-    console.log(`  Concurrency Level: ${chalk.green(config.concurrency)}`);
-    if (config.duration)
-      console.log(`  Duration: ${chalk.green(config.duration)}s`);
+    this.logger.info("\n🔧 Test Configuration:");
+    this.logger.info(`  Concurrency Level: ${config.concurrency}`);
+    if (config.duration) this.logger.info(`  Duration: ${config.duration}s`);
     if (config.iterations)
-      console.log(`  Iterations per client: ${chalk.green(config.iterations)}`);
+      this.logger.info(`  Iterations per client: ${config.iterations}`);
     if (config.rampUpTime)
-      console.log(`  Ramp-up time: ${chalk.green(config.rampUpTime)}s`);
+      this.logger.info(`  Ramp-up time: ${config.rampUpTime}s`);
 
-    console.log(chalk.yellow.bold("\n📈 Operations Summary:"));
-    console.log(`  Total Operations: ${chalk.green(metrics.totalOperations)}`);
-    console.log(`  Successful: ${chalk.green(metrics.successfulOperations)}`);
-    console.log(
-      `  Failed: ${
-        metrics.failedOperations > 0
-          ? chalk.red(metrics.failedOperations)
-          : chalk.green(metrics.failedOperations)
-      }`
+    this.logger.info("\n📈 Operations Summary:");
+    this.logger.info(`  Total Operations: ${metrics.totalOperations}`);
+    this.logger.info(`  Successful: ${metrics.successfulOperations}`);
+    this.logger.info(`  Failed: ${metrics.failedOperations}`);
+    this.logger.info(
+      `  Success Rate: ${(100 - metrics.errorRate).toFixed(2)}%`
     );
-    console.log(
-      `  Success Rate: ${
-        metrics.errorRate < 5
-          ? chalk.green
-          : metrics.errorRate < 20
-          ? chalk.yellow
-          : chalk.red
-      }${(100 - metrics.errorRate).toFixed(2)}%`
-    );
-    console.log(
-      `  Throughput: ${chalk.cyan(metrics.throughput.toFixed(2))} ops/sec`
+    this.logger.info(`  Throughput: ${metrics.throughput.toFixed(2)} ops/sec`);
+
+    this.logger.info("\n⚡ Latency Statistics (ms):");
+    this.logger.info(`  Min: ${metrics.statistics.min.toFixed(2)}`);
+    this.logger.info(`  Max: ${metrics.statistics.max.toFixed(2)}`);
+    this.logger.info(`  Mean: ${metrics.statistics.mean.toFixed(2)}`);
+    this.logger.info(`  Median: ${metrics.statistics.median.toFixed(2)}`);
+    this.logger.info(
+      `  Std Dev: ${metrics.statistics.standardDeviation.toFixed(2)}`
     );
 
-    console.log(chalk.yellow.bold("\n⚡ Latency Statistics (ms):"));
-    console.log(`  Min: ${chalk.green(metrics.statistics.min.toFixed(2))}`);
-    console.log(`  Max: ${chalk.red(metrics.statistics.max.toFixed(2))}`);
-    console.log(`  Mean: ${chalk.blue(metrics.statistics.mean.toFixed(2))}`);
-    console.log(
-      `  Median: ${chalk.blue(metrics.statistics.median.toFixed(2))}`
-    );
-    console.log(
-      `  Std Dev: ${chalk.gray(
-        metrics.statistics.standardDeviation.toFixed(2)
-      )}`
-    );
+    this.logger.info("\n🎯 Latency Percentiles (ms):");
+    this.logger.info(`  P50 (median): ${metrics.percentiles.p50.toFixed(2)}`);
+    this.logger.info(`  P90: ${metrics.percentiles.p90.toFixed(2)}`);
+    this.logger.info(`  P95: ${metrics.percentiles.p95.toFixed(2)}`);
+    this.logger.info(`  P99: ${metrics.percentiles.p99.toFixed(2)}`);
 
-    console.log(chalk.yellow.bold("\n🎯 Latency Percentiles (ms):"));
-    console.log(
-      `  P50 (median): ${chalk.green(metrics.percentiles.p50.toFixed(2))}`
-    );
-    console.log(`  P90: ${chalk.yellow(metrics.percentiles.p90.toFixed(2))}`);
-    console.log(`  P95: ${chalk.magenta(metrics.percentiles.p95.toFixed(2))}`);
-    console.log(`  P99: ${chalk.red(metrics.percentiles.p99.toFixed(2))}`);
-
-    console.log(chalk.cyan("═".repeat(60)) + "\n");
+    this.logger.info("═".repeat(60) + "\n");
   }
 
   reset() {

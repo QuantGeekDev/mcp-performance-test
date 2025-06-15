@@ -1,8 +1,20 @@
 export type ResponseMode = "sse" | "batch";
 
+export type LogLevel = "none" | "error" | "warn" | "info" | "debug";
+
+export interface Logger {
+  error: (message: string, ...args: any[]) => void;
+  warn: (message: string, ...args: any[]) => void;
+  info: (message: string, ...args: any[]) => void;
+  debug: (message: string, ...args: any[]) => void;
+}
+
 export interface TestRunnerConfig {
   baseUrl: string;
   responseMode: ResponseMode;
+  logLevel?: LogLevel;
+  logger?: Logger;
+  enableColorOutput?: boolean;
 }
 
 export interface ConcurrentTestConfig {

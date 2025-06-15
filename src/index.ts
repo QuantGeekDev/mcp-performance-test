@@ -1,8 +1,10 @@
 import { MCP_URL } from "./constants.js";
 import TestRunner from "./TestRunner.js";
 
-const testRunner = new TestRunner({ baseUrl: MCP_URL, responseMode: "batch" });
+const testRunner = new TestRunner({ baseUrl: MCP_URL, responseMode: "sse" });
 
-testRunner.setClientsAmount(10);
+const burstResult = await testRunner.runConcurrentTest({
+  concurrency: 10,
+});
 
-await testRunner.runSequentialTest();
+const jsonResults = testRunner.exportResults(burstResult, "json");

@@ -1,1 +1,1 @@
-export const MCP_URL = "http://localhost:1337";
+export const MCP_URL = "https://encouraging-lemur.mcpstudio.io";

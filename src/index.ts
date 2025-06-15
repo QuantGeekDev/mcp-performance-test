@@ -1,15 +1,8 @@
-import VirtualClient from "./VirtualClient.js";
+import { MCP_URL } from "./constants.js";
+import TestRunner from "./TestRunner.js";
 
-console.clear();
+const testRunner = new TestRunner({ baseUrl: MCP_URL, responseMode: "batch" });
 
-const runTest = async () => {
-  const virtualClient = new VirtualClient("batch");
-  await virtualClient.initialize();
-  await virtualClient.acknowledgeInitialize();
-  await virtualClient.listTools();
-};
+testRunner.setClientsAmount(10);
 
-await runTest();
-await runTest();
-await runTest();
-await runTest();
+await testRunner.runSequentialTest();

@@ -1,22 +1,19 @@
 import axios, { AxiosInstance } from "axios";
 import chalk from "chalk";
-
-const MCP_URL = "http://localhost:1337";
-
-type ResponseMode = "sse" | "batch";
+import { ResponseMode } from "./types.js";
 
 class VirtualClient {
   public axios_instance: AxiosInstance;
   private message_id: number = 1;
   private responseMode: ResponseMode;
 
-  constructor(responseMode: ResponseMode = "sse") {
+  constructor(baseUrl: string, responseMode: ResponseMode = "sse") {
     this.responseMode = responseMode;
 
     const headers = { Accept: "text/event-stream, application/json" };
 
     this.axios_instance = axios.create({
-      baseURL: MCP_URL,
+      baseURL: baseUrl,
       headers,
     });
   }
